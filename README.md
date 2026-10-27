@@ -3,12 +3,9 @@
 Static HTML, CSS and JavaScript. No backend, no server code, no database, no build step.
 
 ## 1. Before you publish (five minutes)
-1. **Contact details:** open `js/config.js` and fill in `email` and `phone`. YouTube and TikTok are already filled in.
-   Optional: `necReg` (your N.E.C. registration number), `instagram`, `linkedin`. Anything left empty is hidden automatically.
+1. **Contact details:** `js/config.js` holds your email, phone, WhatsApp link, Instagram, YouTube and TikTok (all filled in).
+   Optional: `necReg` (your N.E.C. registration number) and `linkedin`. Anything left empty is hidden automatically, icon and all.
 2. **CV:** save your CV as `assets/Bigyan_Rawal_CV.pdf`. The Download CV buttons appear once it's there.
-3. **Project images (recommended):** add renders or photos to `assets/projects/` with these names:
-   `art-center.jpg`, `pet-in-zoo.jpg`, `juddha-barun-yantra.jpg`, `ward-office.jpg`.
-   Each one automatically replaces that project's illustrative line drawing.
 
 Preview locally by double-clicking `index.html`.
 
@@ -23,20 +20,21 @@ Preview locally by double-clicking `index.html`.
 | `index.html` | Page content |
 | `css/style.css` | All styling, light and dark themes |
 | `js/main.js` | Animations and interactions |
-| `js/config.js` | Email, phone, social links, registration number, CV path |
+| `js/config.js` | Email, phone, WhatsApp, social links, registration number, CV path |
 | `assets/img/` | Portrait (WebP and JPG, two sizes each) |
-| `assets/projects/` | Project renders go here |
-| `assets/projects/samples/` | Images for the "Project samples" gallery |
+| `assets/projects/featured/` | Featured project (Hillside campus): aerial, six views and the full board |
+| `assets/projects/samples/` | Images for the auto-sliding "Latest works" strip |
 | `404.html`, `favicon.svg`, `robots.txt`, `_headers`, `.nojekyll` | Hosting files |
 
 ## 4. Editing content
-- **Projects:** each project is an `<article class="work-card">` in `index.html`, with its details in a matching `<template id="p-…">` near the end of the file. To add a project, copy both and give them a new id.
-- **Project samples:** put the image in `assets/projects/samples/`, then copy one `<li>` in the "Project samples" section of `index.html` and change its `src`, `alt`, `width`/`height`, title and caption. Keep images about 2000 px wide or smaller.
+- **Page order:** hero name → profile (about) → featured project → latest works (auto-sliding) → what I do → edu & career → behind the lens → "Hire me!" footer with contact details.
+- **Featured project:** the "Featured project" section of `index.html`. Change the title, text and facts there; images live in `assets/projects/featured/`.
+- **Latest works:** put the image in `assets/projects/samples/`, then copy one `<li class="card …">` in the "Latest works" section and change its `src`, `alt`, `width`/`height`, `data-title`, `data-meta` and caption. `card--l`, `card--m` and `card--s` set the size, which gives the staggered look. Keep images about 2000 px wide or smaller. Slide timing is `--slide-time` in `css/style.css`.
 - **Experience and education:** the "Career and education" section of `index.html`.
-- **Colours:** the variables at the top of `css/style.css` (`--bg`, `--ink`, `--brass` …), with dark-theme values just below.
+- **Colours:** the variables at the top of `css/style.css` (`--bg`, `--ink`, `--accent` …), with dark-theme values just below.
 
 ## 5. Built-in quality
 - Responsive from phones to wide screens; light and dark themes following the visitor's system, with a toggle.
-- Respects "reduce motion": no loader, drawings shown complete, no reveal animations.
-- Keyboard accessible, with a skip link, visible focus and an accessible project dialog (Esc closes).
+- Respects "reduce motion": no loader, no slideshow autoplay, no reveal animations.
+- Keyboard accessible, with a skip link, visible focus and an accessible image viewer (Esc closes, arrow keys step through images).
 - Search-friendly: real HTML text, meta description, Open Graph tags and schema.org Person data.
