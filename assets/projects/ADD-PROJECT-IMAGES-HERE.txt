@@ -1,0 +1,9 @@
+Add a render or photo for each project using these exact file names (JPG, landscape, about 1600 x 1067 px is ideal):
+
+  art-center.jpg
+  pet-in-zoo.jpg
+  juddha-barun-yantra.jpg
+  ward-office.jpg
+
+When a file is present, it automatically replaces that project's line drawing on the site.
+Until then, the illustrative line drawing is shown. You can delete this text file.

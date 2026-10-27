@@ -1,0 +1,4 @@
+Save your CV in this folder as:  Bigyan_Rawal_CV.pdf
+(or change the "cv" path in js/config.js)
+Until the file is added, the Download CV buttons hide themselves on the live site.
+You can delete this text file.
