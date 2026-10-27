@@ -48,6 +48,11 @@
 
 html { scroll-behavior: smooth; scroll-padding-top: 24px; background: var(--bg); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+/* Smooth scrolling (Lenis) */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
 body {
   margin: 0; background: var(--bg); color: var(--ink);
   font: 400 1rem/1.7 var(--f-body);
@@ -98,7 +103,7 @@ button { font: inherit; color: inherit; }
   display: grid; place-items: center; position: fixed; inset: 0; z-index: 250;
   background: var(--bg); color: var(--ink); transition: opacity .7s ease, visibility .7s;
 }
-.loader-done .loader { opacity: 0; visibility: hidden; }
+.loader-done .loader { transform: translateY(-100%); transition: transform .9s var(--ease), visibility 0s .9s; visibility: hidden; }
 .loader-word { margin: 0; font: 400 clamp(1.6rem, 4vw, 2.6rem)/1 var(--f-display); letter-spacing: .3em; text-transform: uppercase; }
 .loader-word span { display: inline-block; animation: loader-bob 1.1s var(--ease) infinite alternate; }
 .loader-word span:nth-child(2) { animation-delay: .08s; } .loader-word span:nth-child(3) { animation-delay: .16s; }
@@ -213,6 +218,16 @@ button { font: inherit; color: inherit; }
   .profile-social { grid-column: auto; }
   .profile-social ul { display: flex; flex-wrap: wrap; gap: 6px 22px; }
 }
+
+/* ---------- Scrolling text band ---------- */
+.marquee { overflow: hidden; padding-block: clamp(18px, 2.4vw, 30px); border-block: 1px solid var(--line); }
+.marquee-track { display: flex; width: max-content; animation: marquee 38s linear infinite; }
+.marquee-group { display: flex; align-items: center; flex: none; }
+.mq-item { padding-inline: clamp(18px, 2.4vw, 36px); font: 400 clamp(2.4rem, 6.4vw, 5.6rem)/1 var(--f-display); text-transform: uppercase; white-space: nowrap; }
+.mq-item--outline { color: transparent; -webkit-text-stroke: 1px var(--ink); font-style: italic; }
+.mq-star { font-size: clamp(1rem, 2vw, 1.6rem); color: var(--accent); }
+@keyframes marquee { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }
 
 /* ---------- Featured project ---------- */
 .featured { padding-top: clamp(40px, 6vw, 90px); }
@@ -375,9 +390,29 @@ a.card-link { cursor: pointer; }
 
 /* ---------- Scroll reveal ---------- */
 @media (prefers-reduced-motion: no-preference) {
-  .js .reveal { opacity: 0; transform: translateY(40px); filter: blur(6px); transition: opacity 1s ease, transform 1.2s var(--ease-out), filter 1s ease; }
+  .js .reveal { opacity: 0; transform: translateY(40px); filter: blur(6px); transition: opacity 1s ease var(--d, 0s), transform 1.2s var(--ease-out) var(--d, 0s), filter 1s ease var(--d, 0s); }
   .js .reveal.is-in { opacity: 1; transform: none; filter: none; }
+
+  /* Images open like a curtain instead of fading */
+  .js .reveal--img { opacity: 1; transform: none; filter: none; clip-path: inset(14% 6% 14% 6%); transition: clip-path 1.5s var(--ease) var(--d, 0s); }
+  .js .reveal--img img { transition: transform 1.4s var(--ease-out), filter 1s ease, opacity 1.2s ease var(--d, 0s); opacity: .3; }
+  .js .reveal--img.is-in { clip-path: inset(0); }
+  .js .reveal--img.is-in img { opacity: 1; }
+
+  /* Big headings: each word rises out of a mask */
+  .js .split .w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .06em; margin-bottom: -.06em; }
+  .js .split .w > span { display: inline-block; transform: translateY(110%) rotate(4deg); transform-origin: left top; transition: transform 1.2s var(--ease-out); transition-delay: calc(var(--i, 0) * 80ms + .1s); }
+  .js .is-in .split .w > span, .js .split.is-in .w > span { transform: none; }
+
+  /* Latest works cards glide in from the right */
+  .js .works .card { opacity: 0; translate: 90px 0; transition: opacity 1s ease, translate 1.4s var(--ease-out); transition-delay: var(--d, 0s); }
+  .js .works.is-in .card { opacity: 1; translate: 0 0; }
 }
+
+/* Parallax: images get a little extra room to drift inside their frame */
+[data-speed] { scale: 1.14; will-change: translate; }
+@media (prefers-reduced-motion: reduce) { [data-speed] { scale: none; } }
+.hero-name .word, .hero-script { will-change: translate; }
 
 /* ---------- Project dialog / lightbox ---------- */
 .project-dialog { width: min(1180px, 100% - 24px); max-width: none; max-height: min(94svh, 1000px); padding: 0; border: 1px solid var(--line); background: var(--bg); color: var(--ink); box-shadow: var(--shadow); }

@@ -1,4 +1,4 @@
-/* Portfolio behaviour: settings, theme, menu, loader, hero reveal, scroll reveals, works slider, lightbox, back-to-top. */
+/* Portfolio behaviour: settings, theme, smooth scroll, menu, loader, hero reveal, scroll animations, works slider, lightbox, back-to-top. */
 (function () {
   var root = document.documentElement;
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -82,6 +82,27 @@
   if (darkMQ.addEventListener) darkMQ.addEventListener('change', syncTheme);
   syncTheme();
 
+  /* ---------- Smooth scrolling (Lenis, js/vendor); off for reduced motion ---------- */
+  var lenis = null;
+  if (!reduce && window.Lenis) {
+    lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 1, touchMultiplier: 1.4 });
+    (function tick(t) { lenis.raf(t); requestAnimationFrame(tick); })(performance.now());
+  }
+  function stopScroll() { root.style.overflow = 'hidden'; if (lenis) lenis.stop(); }
+  function startScroll() { root.style.overflow = ''; if (lenis) lenis.start(); }
+
+  /* In-page links glide to their section instead of jumping */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[href^="#"]');
+    if (!a || !lenis || a.classList.contains('skip') || e.defaultPrevented) return;
+    var id = a.getAttribute('href');
+    var target = id === '#top' ? 0 : (id.length > 1 && document.querySelector(id));
+    if (target === null || target === false) return;
+    e.preventDefault();
+    lenis.scrollTo(target, { offset: target === 0 ? 0 : -24, duration: 1.4 });
+    if (history.pushState) history.pushState(null, '', id);
+  });
+
   /* ---------- Full-screen menu ---------- */
   var menu = document.getElementById('menu');
   var menuBtn = document.getElementById('menuToggle');
@@ -92,12 +113,12 @@
     if (open) {
       menu.hidden = false;
       requestAnimationFrame(function () { requestAnimationFrame(function () { menu.classList.add('is-open'); }); });
-      root.style.overflow = 'hidden';
+      stopScroll();
       mainEl.setAttribute('inert', '');
       menu.querySelector('a').focus({ preventScroll: true });
     } else {
       menu.classList.remove('is-open');
-      root.style.overflow = '';
+      startScroll();
       mainEl.removeAttribute('inert');
       setTimeout(function () { if (!menu.classList.contains('is-open')) menu.hidden = true; }, reduce ? 0 : 900);
     }
@@ -133,7 +154,30 @@
     requestAnimationFrame(function () { requestAnimationFrame(reveal); });
   }
 
-  /* ---------- Scroll reveals (blur-up) ---------- */
+  /* ---------- Big headings: wrap each word so it can rise out of a mask ---------- */
+  document.querySelectorAll('.display').forEach(function (h) {
+    var words = h.textContent.trim().split(/\s+/);
+    h.setAttribute('aria-label', words.join(' '));
+    h.textContent = '';
+    words.forEach(function (w, n) {
+      var outer = document.createElement('span'), inner = document.createElement('span');
+      outer.className = 'w'; outer.setAttribute('aria-hidden', 'true');
+      inner.textContent = w; inner.style.setProperty('--i', n);
+      outer.appendChild(inner); h.appendChild(outer);
+      if (n < words.length - 1) h.appendChild(document.createTextNode(' '));
+    });
+    h.classList.add('split');
+  });
+
+  /* Siblings that enter together come in one after another */
+  document.querySelectorAll('.reveal').forEach(function (el) {
+    var sibs = Array.prototype.filter.call(el.parentNode.children, function (c) { return c.classList.contains('reveal'); });
+    var n = sibs.indexOf(el);
+    if (n > 0) el.style.setProperty('--d', (Math.min(n, 6) * 0.09).toFixed(2) + 's');
+  });
+  document.querySelectorAll('.works .card').forEach(function (c, n) { c.style.setProperty('--d', (n * 0.12).toFixed(2) + 's'); });
+
+  /* ---------- Scroll reveals ---------- */
   function onView(nodes, cls, threshold) {
     if (reduce || !hasIO) { nodes.forEach(function (n) { n.classList.add(cls); }); return; }
     var io = new IntersectionObserver(function (entries) {
@@ -143,7 +187,7 @@
     }, { threshold: threshold, rootMargin: '0px 0px -8% 0px' });
     nodes.forEach(function (n) { io.observe(n); });
   }
-  onView(document.querySelectorAll('.reveal'), 'is-in', 0.12);
+  onView(document.querySelectorAll('.reveal, .split, .works'), 'is-in', 0.12);
 
   /* ---------- Dialog: image lightbox ---------- */
   var dialog = document.getElementById('projectDialog');
@@ -158,7 +202,7 @@
       if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
     }
     body.scrollTop = 0;
-    root.style.overflow = 'hidden';
+    stopScroll();
     if (window.syncSlider) window.syncSlider();
   }
   function showImage(n) {
@@ -198,7 +242,7 @@
   document.getElementById('projectClose').addEventListener('click', function () { dialog.close(); });
   dialog.addEventListener('click', function (e) { if (e.target === dialog) dialog.close(); });
   dialog.addEventListener('close', function () {
-    root.style.overflow = '';
+    startScroll();
     if (opener) opener.focus({ preventScroll: true });
     if (window.syncSlider) window.syncSlider();
   });
@@ -277,18 +321,55 @@
     sync();
   }
 
-  /* ---------- Back to top: appears after the hero, ring shows scroll progress ---------- */
+  /* ---------- Scroll-driven motion: back-to-top ring, parallax, hero drift ---------- */
   var toTop = document.querySelector('.to-top');
+  var words = document.querySelectorAll('.hero-name .word');
+  var script = document.querySelector('.hero-script');
+  var layers = reduce ? [] : Array.prototype.map.call(document.querySelectorAll('[data-speed]'), function (img) {
+    return { img: img, frame: img.parentElement.closest('figure, button, div') || img.parentElement, speed: parseFloat(img.dataset.speed) || 0 };
+  });
   var ticking = false;
   function onScroll() {
-    var max = document.documentElement.scrollHeight - innerHeight;
-    var p = max > 0 ? scrollY / max : 0;
-    toTop.style.setProperty('--p', p.toFixed(4));
-    toTop.classList.toggle('is-shown', scrollY > innerHeight * 0.6);
+    var y = scrollY, vh = innerHeight;
+    var max = document.documentElement.scrollHeight - vh;
+    toTop.style.setProperty('--p', (max > 0 ? y / max : 0).toFixed(4));
+    toTop.classList.toggle('is-shown', y > vh * 0.6);
+
+    if (!reduce && y < vh * 1.5) {
+      /* The two lines of the name slide apart and the script lifts away */
+      if (words[0]) words[0].style.translate = (-y * 0.12).toFixed(1) + 'px 0';
+      if (words[1]) words[1].style.translate = (y * 0.08).toFixed(1) + 'px 0';
+      if (script) script.style.translate = '0 ' + (-y * 0.16).toFixed(1) + 'px';
+    }
+    /* Images drift inside their frames, never past the extra room they were given */
+    layers.forEach(function (l) {
+      var r = l.frame.getBoundingClientRect();
+      if (r.bottom < -100 || r.top > vh + 100) return;
+      var room = r.height * 0.065;
+      var shift = -(r.top + r.height / 2 - vh / 2) * l.speed;
+      l.img.style.translate = '0 ' + Math.max(-room, Math.min(room, shift)).toFixed(1) + 'px';
+    });
     ticking = false;
   }
   addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+  addEventListener('resize', onScroll);
   onScroll();
+
+  /* ---------- Text band: speeds up with scroll speed and follows the scroll direction ---------- */
+  var band = document.querySelector('[data-marquee]');
+  var bandAnim = band && !reduce && band.getAnimations ? band.getAnimations()[0] : null;
+  if (bandAnim) {
+    var lastY = scrollY, dir = 1, rate = 1, bandVisible = true;
+    if (hasIO) new IntersectionObserver(function (en) { bandVisible = en[0].isIntersecting; }).observe(band);
+    (function spin() {
+      var v = scrollY - lastY; lastY = scrollY;
+      if (v) dir = v > 0 ? 1 : -1;
+      var target = dir * (1 + Math.min(Math.abs(v) * 0.35, 6));
+      rate += (target - rate) * 0.08;
+      if (bandVisible) bandAnim.playbackRate = rate;
+      requestAnimationFrame(spin);
+    })();
+  }
 
   /* ---------- Footer year ---------- */
   document.getElementById('year').textContent = new Date().getFullYear();
